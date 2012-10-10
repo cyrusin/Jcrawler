@@ -20,6 +20,10 @@ public class PageRankComputeUrl implements ComputeUrl{
 		for(int i=0;i<50;i++){
 			rank=dataMatrix.mutiply(rank);
 			for(int j=0;j<sortedRank.length;j++){
+				tempRank[j]=sortedRank[j];
+			}
+			Arrays.sort(sortedRank, new compareByRank());
+			for(int j=0;j<sortedRank.length;j++){
 				if(sortedRank[j].compareTo(tempRank[j])!=0){
 					isEqual=false;
 					break;
@@ -31,6 +35,55 @@ public class PageRankComputeUrl implements ComputeUrl{
 				isEqual=true;
 			}
 		}
+	}
+	
+	class compareByRank implements Comparator<String>{
+		public int compare(String a,String b){
+			int indexA=hashedPages.get(a);
+			int indexB=hashedPages.get(b);
+			if(rank[indexA]==rank[indexB]){
+				return 0;
+			}
+			else if(rank[indexA]>rank[indexB]){
+				return -1;
+				
+			}
+			else{
+				return 1;
+			}
+		}
+	}
+	
+	public String[] pageRank(String[] s){
+		int theSize=Math.max(4*s.length/3, 16);
+		hashedPages=new Hashtable<String,Integer>(theSize);
+		String[] pages=new String[s.length];
+		int[] nLinks=new int[s.length];
+		rank=new double[s.length];
+		sortedRank=new String[s.length];
+		String[] dataEntry=new String[s.length];
+		
+		for(int i=0;i<s.length;i++){
+			String[] temp=s[i].split(" ");
+			pages[i]=temp[0];
+			nLinks[i]=temp.length-1;
+			sortedRank[i]=temp[0];
+			rank[i]=1;
+			dataEntry[i]="";
+			hashedPages.put(pages[i], i);
+		}
+		int tRow,tCol;
+		for(int i=0;i<s.length;i++){
+			String[] temp=s[i].split(" ");
+			for(int j=1;j<s.length;j++){
+				tCol=hashedPages.get(temp[0]);
+				tRow=hashedPages.get(temp[j]);
+				dataEntry[tRow]+="{"+tCol+","+(1/(double)nLinks[i])+"};";
+			}
+		}
+		BigMatrix dataMatrix=new BigMatrix(dataEntry);
+		rankFilter(dataMatrix);
+		return sortedRank;
 	}
 
 }
