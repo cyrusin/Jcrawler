@@ -15,27 +15,27 @@ public class BloomFilter<E> implements Serializable {
 	private BitSet bitSet;
 	private int bitSetSize;
 	private double bitsPerElement;
-	private int expectedNumberOfFilterElements;
+	private int expectedNumOfElements;
 	private int numberOfAddedElements;
 	private int k;
 	
-	static final Charset charset=Charset.forName("UTF-8");
+	static final Charset CHARSET=Charset.forName("UTF-8");
 	
-	static final String hashName="MD5";
-	static  MessageDigest digestFunction=null;
+	static final String HASH_NAME="MD5";
+	static  MessageDigest messageDigest=null;
 	static{
-		MessageDigest tmp;
+		MessageDigest md;
 		try{
-			tmp=MessageDigest.getInstance(hashName);
+			md=MessageDigest.getInstance(HASH_NAME);
 		}catch(NoSuchAlgorithmException ex){
 			ex.printStackTrace();
-			tmp=null;
+			md=null;
 		}
-		digestFunction = tmp;
+		messageDigest = md;
 	}
 	
 	public BloomFilter(double c,int n,int k){
-		this.expectedNumberOfFilterElements=n;
+		this.expectedNumOfElements=n;
 		this.k=k;
 		this.bitsPerElement=c;
 		this.bitSetSize=(int)Math.ceil(c*n);
@@ -53,7 +53,7 @@ public class BloomFilter<E> implements Serializable {
 		return createHash(val.getBytes(charset));
 	}
 	public static int createHash(String val){
-		return createHash(val,charset);
+		return createHash(val,CHARSET);
 	}
 	public static int createHash(byte[] data){
 		return createHashes(data,1)[0];
@@ -65,10 +65,10 @@ public class BloomFilter<E> implements Serializable {
 		byte salt=0;
 		while(k<hashes){
 			byte[] digest;
-			synchronized(digestFunction){
-				digestFunction.update(salt);
+			synchronized(messageDigest){
+				messageDigest.update(salt);
 				salt++;
-				digest=digestFunction.digest(data);
+				digest=messageDigest.digest(data);
 			}
 			for(int i=0;i<digest.length/4&&k<hashes;i++){
 				int h=0;
@@ -82,18 +82,17 @@ public class BloomFilter<E> implements Serializable {
 		}
 		return result;
 	}
-	public boolean equals(Object o){
-		if(o==null){
+	public boolean equals(Object obj){
+		if(obj==null){
 			return false;
 		}
 		
-		if(getClass()!=o.getClass()){
+		if(getClass()!=obj.getClass()){
 			return false;
 		}
-		BloomFilter<E> o3 = (BloomFilter<E>) o;
-		BloomFilter<E> o2 = o3;
+		BloomFilter<E> o2 = (BloomFilter<E>) obj;
 		final BloomFilter<E> other=o2;
-		if(this.expectedNumberOfFilterElements!=other.expectedNumberOfFilterElements){
+		if(this.expectedNumOfElements!=other.expectedNumOfElements){
 			return false;
 		}
 		if(this.k!=other.k){
@@ -110,14 +109,14 @@ public class BloomFilter<E> implements Serializable {
 	public int haseCode(){
 		int hash=7;
 		hash=61*hash+(this.bitSet!=null?this.bitSet.hashCode() : 0);
-		hash=61*hash+this.expectedNumberOfFilterElements;
+		hash=61*hash+this.expectedNumOfElements;
 		hash=61*hash+this.bitSetSize;
 		hash=61*hash+this.k;
 		return hash;
 	}
 	
 	public double expectedFalsePositiveProbability(){
-		return getFalsePositiveProbability(this.expectedNumberOfFilterElements);
+		return getFalsePositiveProbability(this.expectedNumOfElements);
 	}
 	public double getFalsePositiveProbability(double numOfElements){
 		return Math.pow((1-Math.exp(-k*(double)numOfElements/(double)bitSetSize)), k);
@@ -134,7 +133,7 @@ public class BloomFilter<E> implements Serializable {
 	}
 	
 	public void add(E  element){
-		add(element.toString().getBytes(charset));
+		add(element.toString().getBytes(CHARSET));
 	}
 	public void add(byte[] bytes){
 		int[] hashes=createHashes(bytes,k);
@@ -149,7 +148,7 @@ public class BloomFilter<E> implements Serializable {
 		}
 	}
 	public boolean contains(E element){
-		return contains(element.toString().getBytes(charset));
+		return contains(element.toString().getBytes(CHARSET));
 	}
 	
 	public boolean contains(byte[] bytes){
@@ -187,12 +186,12 @@ public class BloomFilter<E> implements Serializable {
 	}
 	
 	public int getExpectedNumberOFElements(){
-		return expectedNumberOfFilterElements;
+		return expectedNumOfElements;
 	}
 	public double getExpectedBitsPerElement(){
 		return this.bitsPerElement;
 	}
-	public double getBitPetElement(){
+	public double getBitPerElement(){
 		return this.bitSetSize/(double)numberOfAddedElements;
 	}
 }
